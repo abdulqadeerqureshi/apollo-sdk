@@ -1,0 +1,1 @@
+-keep class pk.myhisaab.sdk.** { *; }

@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_answer.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_answer.xml"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_answer_low.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_answer_low.xml"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_answer_video_low.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_answer_video_low.xml"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_decline_low.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_decline_low.xml"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_answer_video.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_answer_video.xml"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-anydpi-v21/ic_call_decline.xml",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-anydpi-v21/ic_call_decline.xml"
+    }
+]

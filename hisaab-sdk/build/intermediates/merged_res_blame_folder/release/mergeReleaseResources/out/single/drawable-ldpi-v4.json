@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_answer_low.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_answer_low.png"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_answer_video.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_answer_video.png"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_decline.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_decline.png"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_answer.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_answer.png"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_answer_video_low.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_answer_video_low.png"
+    },
+    {
+        "merged": "pk.myhisaab.sdk.hisaab-sdk-release-3:/drawable-ldpi-v4/ic_call_decline_low.png",
+        "source": "pk.myhisaab.sdk.hisaab-sdk-core-1.12.0-29:/drawable-ldpi-v4/ic_call_decline_low.png"
+    }
+]
