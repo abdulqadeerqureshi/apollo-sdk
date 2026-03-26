@@ -1,6 +1,6 @@
-# Hisaab SDK for Android
+# Apollo Buddy SDK for Android
 
-The Hisaab SDK provides a robust, drop-in web view integration built specifically to support
+The Apollo Buddy SDK provides a robust, drop-in web view integration built specifically to support
 authentication flow seamlessly.
 
 The SDK exposes an easy-to-use Builder pattern for configurations, handles modern Activity Result
@@ -24,7 +24,7 @@ Add the repository and dependency to your app's `build.gradle.kts` / `build.grad
 
 ```kotlin
 dependencies {
-    implementation("pk.myhisaab.sdk:hisaab-sdk:1.0.0")
+    implementation("pk.apollobuddy.sdk:apollo-buddy-sdk:1.0.0")
 }
 ```
 
@@ -39,7 +39,7 @@ The SDK mandates certain parameters to guarantee valid authentication flows.
 
 ### Building the Initialization Parameters
 
-The `HisaabInitParams` requires exact parameter matching and validates itself safely:
+The `ApolloBuddyInitParams` requires exact parameter matching and validates itself safely:
 
 ```kotlin
 class MyApplication : Application() {
@@ -47,7 +47,7 @@ class MyApplication : Application() {
         super.onCreate()
 
         // 1. Build your required initialization parameters
-        val initParams = HisaabInitParams.Builder()
+        val initParams = ApolloBuddyInitParams.Builder()
             .setEloadNumber("031234567890") // Required: Must not be blank
             .setImsi("a410t010y5689")       // Required: Must not be blank
             .setProfileId(15)               // Required: Must be > 0
@@ -60,7 +60,7 @@ class MyApplication : Application() {
             .build()
 
         // 2. Initialize the SDK
-        HisaabSdk.init(applicationContext, initParams)
+        ApolloBuddySdk.init(applicationContext, initParams)
     }
 }
 ```
@@ -69,12 +69,13 @@ class MyApplication : Application() {
 
 ## 🕹 Step 2: Configure Web View Options (Optional)
 
-The SDK utilizes `HSConfig` to manipulate how the built-in WebView behaves. You can optionally use
+The SDK utilizes `ApolloBuddyConfig` to manipulate how the built-in WebView behaves. You can
+optionally use
 this during launch to tailor the SDK to your needs.
 
 ```kotlin
 
-val webConfig = HSConfig.Builder()
+val webConfig = ApolloBuddyConfig.Builder()
     .setEnableJs(true)
     .setShowToolbar(true)
     .setAllowThirdPartyCookies(true)
@@ -95,7 +96,7 @@ val webConfig = HSConfig.Builder()
 
 ## 🎯 Step 3: Launch the SDK
 
-Since the SDK dynamically generates the secure URL internally based on the `HisaabInitParams`
+Since the SDK dynamically generates the secure URL internally based on the `ApolloBuddyInitParams`
 provided during initialization, launching the SDK requires no URL input!
 
 ### Method A: The Modern Way (Activity Result API) - Recommended 🌟
@@ -106,17 +107,18 @@ In your `Activity` or `Fragment`, register a modern launcher contract:
 class MainActivity : AppCompatActivity() {
 
     // Define the contract
-    private val hisaabLauncher = registerForActivityResult(HisaabSdk.Contract()) { result ->
+    private val apolloBuddyLauncher =
+        registerForActivityResult(ApolloBuddySdk.Contract()) { result ->
         when (result) {
-            is HSResult.Success -> {
+            is ApolloBuddyResult.Success -> {
                 // Success criteria met!
                 Toast.makeText(this, "Success: ${result.data}", Toast.LENGTH_LONG).show()
             }
-            is HSResult.Failure -> {
+            is ApolloBuddyResult.Failure -> {
                 // Error handled gracefully
                 Toast.makeText(this, "Failed: ${result.reason}", Toast.LENGTH_LONG).show()
             }
-            is HSResult.Cancelled -> {
+            is ApolloBuddyResult.Cancelled -> {
                 // User pressed back button / closed SDK
                 Toast.makeText(this, "Dismissed by user", Toast.LENGTH_SHORT).show()
             }
@@ -124,9 +126,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Launch it whenever needed
-    fun openHisaab() {
-        hisaabLauncher.launch(
-            HSLaunchInput(config = webConfig) // the webConfig from Step 2
+    fun openApolloBuddy() {
+        apolloBuddyLauncher.launch(
+            ApolloBuddyLaunchInput(config = webConfig) // the webConfig from Step 2
         )
     }
 }
@@ -138,17 +140,17 @@ If your architecture does not easily support modern Activity Result Contracts, u
 wrapper:
 
 ```kotlin
-HisaabSdk.launch(
+ApolloBuddySdk.launch(
     context = this,
     config = webConfig,
-    callback = object : HisaabSdk.Callback {
-        override fun onResult(result: HSResult) {
+    callback = object : ApolloBuddySdk.Callback {
+        override fun onResult(result: ApolloBuddyResult) {
             when (result) {
-                is HSResult.Success -> { /* Handle success */
+                is ApolloBuddyResult.Success -> { /* Handle success */
                 }
-                is HSResult.Failure -> { /* Handle failure */
+                is ApolloBuddyResult.Failure -> { /* Handle failure */
                 }
-                is HSResult.Cancelled -> { /* Handle cancel */
+                is ApolloBuddyResult.Cancelled -> { /* Handle cancel */
                 }
             }
         }

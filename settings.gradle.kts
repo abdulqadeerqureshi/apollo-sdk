@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "HisaabSdkProject"
-include(":hisaab-sdk")
+rootProject.name = "ApolloBuddy"
+include(":apollo-buddy-sdk")
 include(":app")

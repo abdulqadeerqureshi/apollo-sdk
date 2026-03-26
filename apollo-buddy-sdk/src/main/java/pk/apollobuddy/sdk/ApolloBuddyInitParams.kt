@@ -1,12 +1,12 @@
-package pk.myhisaab.sdk
+package pk.apollobuddy.sdk
 
 import android.net.Uri
 import androidx.core.net.toUri
 
 /**
- * Initialization parameters for the Hisaab SDK.
+ * Initialization parameters for the Apollo Buddy SDK.
  */
-class HisaabInitParams private constructor(
+class ApolloBuddyInitParams private constructor(
     val eloadNumber: String,
     val imsi: String,
     val profileId: Int,
@@ -23,12 +23,12 @@ class HisaabInitParams private constructor(
         uriBuilder?.appendQueryParameter("imsi", imsi)
         uriBuilder?.appendQueryParameter("profileId", profileId.toString())
         uriBuilder?.appendQueryParameter("regionId", regionId.toString())
-        
+
         userCode?.let { uriBuilder?.appendQueryParameter("userCode", it) }
         employeeId?.let { uriBuilder?.appendQueryParameter("employeeId", it.toString()) }
-        
+
         uriBuilder?.appendQueryParameter("token", token)
-        
+
         return uriBuilder?.build().toString()
     }
 
@@ -46,19 +46,19 @@ class HisaabInitParams private constructor(
         fun setImsi(imsi: String) = apply { this.imsi = imsi }
         fun setProfileId(profileId: Int) = apply { this.profileId = profileId }
         fun setRegionId(regionId: Int) = apply { this.regionId = regionId }
-        
+
         /** Required for Non-AD users */
         fun setUserCode(userCode: String) = apply { this.userCode = userCode }
-        
+
         /** Required for AD users */
         fun setEmployeeId(employeeId: Int) = apply { this.employeeId = employeeId }
-        
+
         fun setToken(token: String) = apply { this.token = token }
-        
+
         /** Optional base URL */
         fun setWebURL(webURL: String) = apply { this.webURL = webURL }
 
-        fun build(): HisaabInitParams {
+        fun build(): ApolloBuddyInitParams {
             val finalEloadNumber: String = requireNotNull(value = eloadNumber) { "eloadNumber is required" }
             require(finalEloadNumber.isNotBlank()) { "eloadNumber cannot be blank" }
 
@@ -74,13 +74,13 @@ class HisaabInitParams private constructor(
             val finalToken: String = requireNotNull(value = token) { "token is required" }
             require(finalToken.isNotBlank()) { "token cannot be blank" }
 
-            require(userCode != null || employeeId != null) { 
-                "Either userCode (for Non-AD users) or employeeId (for AD users) must be provided" 
+            require(userCode != null || employeeId != null) {
+                "Either userCode (for Non-AD users) or employeeId (for AD users) must be provided"
             }
 
             val finalWebUrl: String = webURL ?: "https://apollo.digitalmiles.org/"
 
-            return HisaabInitParams(
+            return ApolloBuddyInitParams(
                 eloadNumber = finalEloadNumber,
                 imsi = finalImsi,
                 profileId = finalProfileId,

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "pk.myhisaab.sdk"
+    namespace = "pk.apollobuddy.sdk"
     compileSdk = 34
 
     defaultConfig {
@@ -45,7 +45,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.webkit:webkit:1.9.0") 
+    implementation("androidx.webkit:webkit:1.9.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -56,15 +56,15 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "pk.myhisaab"
-                artifactId = "hisaab_sdk_project"
+                groupId = "pk.apollobuddy"
+                artifactId = "apollo_buddy_sdk"
                 version = "1.0.0"
             }
         }
-        
+
         repositories {
             mavenLocal()
-            
+
             maven {
                 name = "LocalBuildDir"
                 url = uri("${project.layout.buildDirectory.get()}/repo")

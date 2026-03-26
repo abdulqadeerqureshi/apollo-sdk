@@ -1,13 +1,13 @@
-package pk.myhisaab.sdk
+package pk.apollobuddy.sdk
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
- * Configuration options for the Hisaab SDK WebView.
+ * Configuration options for the Apollo Buddy SDK WebView.
  */
 @Parcelize
-data class HSConfig(
+data class ApolloBuddyConfig(
     val enableJs: Boolean = true,
     val enableDomStorage: Boolean = true,
     val showToolbar: Boolean = true,
@@ -21,8 +21,8 @@ data class HSConfig(
     val statusQueryParam: String? = null,
     val successQueryValue: String? = null,
     val failureQueryValue: String? = null,
-    
-    val themeColor: Int? = null
+
+    val themeColor: Int? = null,
 ) : Parcelable {
 
     class Builder {
@@ -44,14 +44,14 @@ data class HSConfig(
         fun setAllowThirdPartyCookies(allow: Boolean) = apply { this.allowThirdPartyCookies = allow }
         fun setIgnoreSslErrors(ignore: Boolean) = apply { this.ignoreSslErrors = ignore }
         fun setCustomUserAgent(agent: String) = apply { this.customUserAgent = agent }
-        
+
         /**
          * partial string match on the URL. 
          * If the URL contains this string, it is considered a success.
          */
         fun setSuccessUrlPattern(pattern: String) = apply { this.successUrlPattern = pattern }
         fun setFailureUrlPattern(pattern: String) = apply { this.failureUrlPattern = pattern }
-        
+
         /**
          * Detect result by query parameter. 
          * E.g. statusParam="payment_status", successValue="paid", failureValue="failed"
@@ -65,7 +65,7 @@ data class HSConfig(
         fun setThemeColor(color: Int) = apply { this.themeColor = color }
         fun setShowToolbar(show: Boolean) = apply { this.showToolbar = show }
 
-        fun build() = HSConfig(
+        fun build() = ApolloBuddyConfig(
             enableJs,
             enableDomStorage,
             showToolbar,

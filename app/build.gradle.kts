@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hisaab.test"
+    namespace = "com.example.apollobuddy.test"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.hisaab.test"
+        applicationId = "com.example.apollobuddy.test"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -25,7 +25,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":hisaab-sdk"))
+    implementation(project(":apollo-buddy-sdk"))
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
