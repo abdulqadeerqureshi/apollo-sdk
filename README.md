@@ -42,10 +42,6 @@ The SDK mandates certain parameters to guarantee valid authentication flows.
 The `HisaabInitParams` requires exact parameter matching and validates itself safely:
 
 ```kotlin
-import android.app.Application
-import pk.myhisaab.sdk.HisaabSdk
-import pk.myhisaab.sdk.HisaabInitParams
-
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -80,7 +76,6 @@ The SDK utilizes `HSConfig` to manipulate how the built-in WebView behaves. You 
 this during launch to tailor the SDK to your needs.
 
 ```kotlin
-import pk.myhisaab.sdk.HSConfig
 
 val webConfig = HSConfig.Builder()
     .setEnableJs(true)
@@ -111,12 +106,6 @@ provided during initialization, launching the SDK requires no URL input!
 In your `Activity` or `Fragment`, register a modern launcher contract:
 
 ```kotlin
-import androidx.appcompat.app.AppCompatActivity
-import android.widget.Toast
-import pk.myhisaab.sdk.HisaabSdk
-import pk.myhisaab.sdk.HSLaunchInput
-import pk.myhisaab.sdk.HSResult
-
 class MainActivity : AppCompatActivity() {
 
     // Define the contract
@@ -169,17 +158,3 @@ HisaabSdk.launch(
     }
 )
 ```
-
----
-
-## ⚙️ How URL Construction Works Under-The-Hood
-
-The SDK automatically serializes your `HisaabInitParams` directly to the `webURL` using safe query
-components:
-
-```
-https://apollo.digitalmiles.org/?eloadNumber=031234567890&imsi=a410...&profileId=15&regionId=1&userCode=APOL-1112&token=...
-```
-
-Therefore, you don't have to worry about manual string formatting or query encoding. The SDK takes
-care of it natively.
