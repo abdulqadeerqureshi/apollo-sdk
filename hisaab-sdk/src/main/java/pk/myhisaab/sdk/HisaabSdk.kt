@@ -11,13 +11,15 @@ object HisaabSdk {
 
     private var isInitialized = false
     private var applicationContext: Context? = null
+    internal var initParams: HisaabInitParams? = null
 
     /**
      * Initializes the SDK. Should be called in the Application class.
      */
-    fun init(context: Context) {
+    fun init(context: Context, params: HisaabInitParams) {
         if (isInitialized) return
         applicationContext = context.applicationContext
+        initParams = params
         isInitialized = true
     }
 
@@ -32,26 +34,23 @@ object HisaabSdk {
      * Launches the Hisaab Web Flow.
      *
      * @param context Context to launch the Activity from.
-     * @param url The URL to open. Must be a valid HTTP/HTTPS URL.
      * @param config Optional configuration for the WebView.
      * @param callback Optional callback for results (legacy style). 
      *                 For Activity Result API, use the [Contract].
      */
     fun launch(
         context: Context,
-        url: String,
         config: HSConfig = HSConfig(),
         callback: Callback? = null
     ) {
-        if (!isInitialized) {
-            // We can strictly throw or just log. 
-            // Given "robust" requirement, throwing helps dev catch it early, 
-            // but auto-init is friendlier. I'll auto-init but warn.
-            init(context) 
+        if (!isInitialized || initParams == null) {
+            throw IllegalStateException("HisaabSdk must be initialized with params before launching")
         }
 
+        val url = initParams!!.buildUrl()
+
         if (!UrlValidator.isValid(url)) {
-            callback?.onResult(HSResult.Failure("Invalid URL: $url", 400))
+            callback?.onResult(HSResult.Failure("Invalid generated URL: $url", 400))
             return
         }
 
@@ -77,8 +76,9 @@ object HisaabSdk {
      */
     class Contract : ActivityResultContract<HSLaunchInput, HSResult>() {
         override fun createIntent(context: Context, input: HSLaunchInput): Intent {
+            val url = initParams?.buildUrl() ?: throw IllegalStateException("HisaabSdk not initialized with params")
             return Intent(context, HisaabWebViewActivity::class.java).apply {
-                putExtra(HisaabWebViewActivity.EXTRA_URL, input.url)
+                putExtra(HisaabWebViewActivity.EXTRA_URL, url)
                 putExtra(HisaabWebViewActivity.EXTRA_CONFIG, input.config)
             }
         }
@@ -91,7 +91,6 @@ object HisaabSdk {
 }
 
 data class HSLaunchInput(
-    val url: String,
     val config: HSConfig = HSConfig()
 )
 

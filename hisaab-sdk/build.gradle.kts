@@ -57,7 +57,7 @@ afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
                 groupId = "pk.myhisaab"
-                artifactId = "hisaab-web-sdk"
+                artifactId = "hisaab_sdk_project"
                 version = "1.0.0"
             }
         }

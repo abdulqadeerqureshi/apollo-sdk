@@ -8,14 +8,28 @@ import pk.myhisaab.sdk.HisaabSdk
 import pk.myhisaab.sdk.HSConfig
 import pk.myhisaab.sdk.HSLaunchInput
 import pk.myhisaab.sdk.HSResult
+import pk.myhisaab.sdk.HisaabInitParams
+import pk.myhisaab.sdk.HisaabSdk.Contract
 
 class MainActivity : AppCompatActivity() {
 
-    private val hisaabLauncher = registerForActivityResult(HisaabSdk.Contract()) { result ->
+    private val hisaabLauncher = registerForActivityResult(Contract()) { result ->
         when (result) {
-            is HSResult.Success -> Toast.makeText(this, "Success: ${result.data}", Toast.LENGTH_LONG).show()
-            is HSResult.Failure -> Toast.makeText(this, "Failed: ${result.reason}", Toast.LENGTH_LONG).show()
-            is HSResult.Cancelled -> Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
+            is HSResult.Success -> Toast.makeText(
+                this,
+                "Success: ${result.data}",
+                Toast.LENGTH_LONG
+            ).show()
+            is HSResult.Failure -> Toast.makeText(
+                this,
+                "Failed: ${result.reason}",
+                Toast.LENGTH_LONG
+            ).show()
+            is HSResult.Cancelled -> Toast.makeText(
+                this,
+                "Cancelled",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -23,9 +37,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         // Initialize SDK
-        HisaabSdk.init(applicationContext)
+        val params: HisaabInitParams = HisaabInitParams.Builder()
+            .setEloadNumber("031234567890")
+            .setImsi("a410t010y5689")
+            .setProfileId(15)
+            .setRegionId(1)
+            .setUserCode("APOL-1112")
+            .setEmployeeId(1456)
+            .setToken("t293f4XXXXXXXXXX")
+            .build()
+            
+        HisaabSdk.init(applicationContext, params)
         
-        val button = Button(this).apply {
+        val button: Button = Button(this).apply {
             text = "Launch SDK"
             setOnClickListener {
                 launchSdk()
@@ -35,7 +59,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchSdk() {
-        // Modern Way
         val config: HSConfig = HSConfig.Builder()
             .setEnableJs(enable = true)
             .setShowToolbar(show = true)
@@ -51,14 +74,13 @@ class MainActivity : AppCompatActivity() {
             
         hisaabLauncher.launch(
             HSLaunchInput(
-                url = "https://www.google.com",
                 config = config
             )
         )
         
         // Legacy Way (Commented out)
         /*
-        HisaabSdk.launch(this, "https://example.com", config, object : HisaabSdk.Callback {
+        HisaabSdk.launch(this, config, object : HisaabSdk.Callback {
             override fun onResult(result: HSResult) {
                 // Handle result
             }
