@@ -56,10 +56,7 @@ class MyApplication : Application() {
 
             // Conditional: You MUST provide either userCode (for Non-AD) OR employeeId (for AD)
             .setUserCode("APOL-1112")
-            // .setEmployeeId(1456)            
-
-            // Optional: The default URL is already https://apollo.digitalmiles.org/
-            // .setWebURL("https://apollo.digitalmiles.org/") 
+            // .setEmployeeId(1456)
             .build()
 
         // 2. Initialize the SDK
