@@ -24,7 +24,7 @@ Add the repository and dependency to your app's `build.gradle.kts` / `build.grad
 
 ```kotlin
 dependencies {
-    implementation("pk.apollobuddy.sdk:apollo-buddy-sdk:1.0.0")
+    implementation("com.github.abdulqadeerqureshi:apollo-sdk:v1.0.0")
 }
 ```
 
