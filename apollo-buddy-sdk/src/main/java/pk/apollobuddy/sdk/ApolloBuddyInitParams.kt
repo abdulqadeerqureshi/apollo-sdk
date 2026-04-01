@@ -55,8 +55,8 @@ class ApolloBuddyInitParams private constructor(
 
         fun setToken(token: String) = apply { this.token = token }
 
-        /** Optional base URL */
-        fun setWebURL(webURL: String) = apply { this.webURL = webURL }
+        /** Optional base URL. Trims input and fixes common mistakes (missing scheme, slash after host). */
+        fun setWebURL(webURL: String) = apply { this.webURL = normalizeWebUrl(webURL) }
 
         fun build(): ApolloBuddyInitParams {
             val finalEloadNumber: String = requireNotNull(value = eloadNumber) { "eloadNumber is required" }
@@ -93,3 +93,61 @@ class ApolloBuddyInitParams private constructor(
         }
     }
 }
+
+/**
+ * Normalizes a developer-provided base URL so [Uri.Builder] can append query parameters reliably.
+ *
+ * - Trims whitespace.
+ * - Adds a scheme when missing: `https://` for normal hosts; `https:` for scheme-relative `//host/...`;
+ *   does **not** prepend `https://` to opaque URIs (`mailto:`, `tel:`, `data:`, …) or to `host:port` forms
+ *   (handled by prefixing `https://` to the whole string).
+ * - If the URI has a hierarchical `scheme://authority` but **no path**, sets the path to `/`
+ *   (including `https://host?query` → `https://host/?query`).
+ * - If a non-root path already exists, the string is unchanged (no extra trailing slash).
+ *
+ * Not handled (callers should pass valid absolute web bases): relative paths (`foo/bar`), malformed
+ * URLs, or userinfo edge cases (`user:pass@host` mis-parsed as opaque).
+ */
+internal fun normalizeWebUrl(raw: String): String {
+    val trimmed = raw.trim()
+    if (trimmed.isEmpty()) return trimmed
+
+    val url = ensureHttpsForMissingScheme(trimmed)
+
+    val uri: Uri = url.toUri()
+    if (uri.scheme.isNullOrEmpty() || uri.authority.isNullOrEmpty()) {
+        return url
+    }
+
+    val path = uri.path
+    return if (path.isNullOrEmpty()) {
+        uri.buildUpon().path("/").build().toString()
+    } else {
+        url
+    }
+}
+
+/** Adds `https` when the string is clearly a missing-scheme web URL; leaves opaque schemes alone. */
+private fun ensureHttpsForMissingScheme(url: String): String {
+    if (url.contains("://")) return url
+    if (url.startsWith("//")) return "https:$url"
+    // host:port or host:port/path (e.g. api.example.com:443, localhost:8080/foo)
+    if (HOST_WITH_PORT_WITHOUT_SCHEME.matches(url)) return "https://$url"
+    val colon = url.indexOf(':')
+    if (colon > 0) {
+        val afterColon = url.substring(colon + 1)
+        if (!afterColon.startsWith("//")) {
+            val beforeColon = url.substring(0, colon)
+            if (beforeColon.matches(SCHEME_TOKEN)) {
+                return url
+            }
+        }
+    }
+    return "https://$url"
+}
+
+/** First segment is digits-only after ':' (port), optional path/query. */
+private val HOST_WITH_PORT_WITHOUT_SCHEME =
+    Regex("^[^/?#]+:(\\d+)(?:/.*)?(?:[?#].*)?$")
+
+private val SCHEME_TOKEN = Regex("[a-zA-Z][a-zA-Z0-9+.-]*")
