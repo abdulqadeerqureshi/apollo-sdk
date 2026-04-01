@@ -40,11 +40,10 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize SDK
         val params: ApolloBuddyInitParams = ApolloBuddyInitParams.Builder()
-            .setWebURL("www.google.com")
             .setEloadNumber("031234567890")
             .setImsi("a410t010y5689")
             .setProfileId(15)
-            .setRegionId(1)
+            .setRegionId(1L)
             .setUserCode("APOL-1112")
             .setEmployeeId(1456)
             .setToken("t293f4XXXXXXXXXX")

@@ -11,7 +11,7 @@ URL.
 
 ## 🛠 Prerequisites
 
-- **Minimum SDK**: 24 (Android 7.0)
+- **Minimum SDK**: 23 (Android 6.0)
 - **Target SDK**: 34 (Android 14)
 
 ---
@@ -51,7 +51,7 @@ class MyApplication : Application() {
             .setEloadNumber("031234567890") // Required: Must not be blank
             .setImsi("a410t010y5689")       // Required: Must not be blank
             .setProfileId(15)               // Required: Must be > 0
-            .setRegionId(1)                 // Required: Must be > 0
+            .setRegionId(1L)                // Required: Long, must be > 0 (matches Apollo)
             .setToken("t293f4XXXXXXXXXX")   // Required: Must not be blank
 
             // Conditional: You MUST provide either userCode (for Non-AD) OR employeeId (for AD)
@@ -157,6 +157,21 @@ val webConfig = ApolloBuddyConfig.Builder()
 
 Since the SDK dynamically generates the secure URL internally based on the `ApolloBuddyInitParams`
 provided during initialization, launching the SDK requires no URL input!
+
+### What Success, Failure, and Cancelled mean
+
+The SDK reports exactly one outcome through `ApolloBuddyResult`:
+
+- **Success** — The flow finished in a **successful** state: the loaded URL matched your configured
+  success rules (for example `statusQueryParam` / `successQueryValue`, or `successUrlPattern`).
+  `data` is the final URL string.
+- **Failure** — The flow ended in an **error** or **explicit failure** state: WebView or SSL
+  errors, invalid URL, or a URL matched your failure rules (`failureQueryValue`,
+  `failureUrlPattern`).
+  Includes a human-readable `reason`, an integer `code`, and optionally `finalUrl`.
+- **Cancelled** — The user **exited** the WebView without matching success or failure (for example
+  back navigation when there is no prior page). Optionally includes `finalUrl` if the WebView had a
+  current URL.
 
 ### Method A: The Modern Way (Activity Result API) - Recommended 🌟
 

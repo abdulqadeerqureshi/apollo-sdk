@@ -10,7 +10,7 @@ class ApolloBuddyInitParams private constructor(
     val eloadNumber: String,
     val imsi: String,
     val profileId: Int,
-    val regionId: Int,
+    val regionId: Long,
     val userCode: String?,
     val employeeId: Int?,
     val token: String,
@@ -36,7 +36,7 @@ class ApolloBuddyInitParams private constructor(
         private var eloadNumber: String? = null
         private var imsi: String? = null
         private var profileId: Int? = null
-        private var regionId: Int? = null
+        private var regionId: Long? = null
         private var userCode: String? = null
         private var employeeId: Int? = null
         private var token: String? = null
@@ -45,7 +45,7 @@ class ApolloBuddyInitParams private constructor(
         fun setEloadNumber(eloadNumber: String) = apply { this.eloadNumber = eloadNumber }
         fun setImsi(imsi: String) = apply { this.imsi = imsi }
         fun setProfileId(profileId: Int) = apply { this.profileId = profileId }
-        fun setRegionId(regionId: Int) = apply { this.regionId = regionId }
+        fun setRegionId(regionId: Long) = apply { this.regionId = regionId }
 
         /** Required for Non-AD users */
         fun setUserCode(userCode: String) = apply { this.userCode = userCode }
@@ -69,7 +69,7 @@ class ApolloBuddyInitParams private constructor(
             require(finalProfileId > 0) { "profileId must be a valid positive number" }
 
             val finalRegionId = requireNotNull(regionId) { "regionId is required" }
-            require(finalRegionId > 0) { "regionId must be a valid positive number" }
+            require(finalRegionId > 0L) { "regionId must be a valid positive number" }
 
             val finalToken: String = requireNotNull(value = token) { "token is required" }
             require(finalToken.isNotBlank()) { "token cannot be blank" }
