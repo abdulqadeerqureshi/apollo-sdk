@@ -57,12 +57,71 @@ class MyApplication : Application() {
             // Conditional: You MUST provide either userCode (for Non-AD) OR employeeId (for AD)
             .setUserCode("APOL-1112")
             // .setEmployeeId(1456)
+
+           // Optional: override the default base URL (see "Web URL patterns" below)
+           // .setWebURL("https://your-api.example.com/")
             .build()
 
         // 2. Initialize the SDK
         ApolloBuddySdk.init(applicationContext, initParams)
     }
 }
+```
+
+### Web URL patterns (`setWebURL`)
+
+The SDK builds the page URL by taking a **base URL** and appending query parameters (`eloadNumber`,
+`imsi`, `token`, etc.). You can set the base with *
+*`ApolloBuddyInitParams.Builder.setWebURL(String)`**. If you omit it, the default base is *
+*`https://apollo.digitalmiles.org/`**.
+
+`setWebURL` **normalizes** the string so common copy-paste mistakes still produce a loadable URL.
+You do not need to hand-perfect every slash; follow the rules below.
+
+#### Normalization rules
+
+1. **Trim** — Leading and trailing whitespace is removed.
+2. **Scheme** — If the string does not contain `://`:
+   - **`https://`** is prefixed for typical hostnames (e.g. `www.example.com` →
+     `https://www.example.com`).
+   - **Scheme-relative** URLs that start with **`//`** get **`https:`** only (e.g.
+     `//api.example.com/path` → `https://api.example.com/path`).
+   - **`host:port`** forms (e.g. `api.example.com:443`, `localhost:8080`) get **`https://`** in
+     front of the **whole** string.
+   - **Opaque** schemes without `://` (`mailto:…`, `tel:…`, `data:…`) are left as-is — do **not**
+     use these as the web base URL.
+3. **Path** — For a normal hierarchical URL (`scheme://host…`):
+   - If there is **no path** (e.g. `https://example.com` or `https://example.com?ref=1`), a **root
+     path `/`** is inserted so queries append correctly (`https://example.com/…`).
+   - If a path **already exists** (including a lone `/` or `/app/...`), the string is **not**
+     altered to add extra slashes at the end.
+
+#### Examples
+
+| You pass                  | After normalization (typical) |
+|---------------------------|-------------------------------|
+| `www.example.com`         | `https://www.example.com/`    |
+| `www.example.com/`        | `https://www.example.com/`    |
+| `https://example.com`     | `https://example.com/`        |
+| `https://example.com/app` | `https://example.com/app`     |
+| `https://example.com?x=1` | `https://example.com/?x=1`    |
+| `//cdn.example.com/foo`   | `https://cdn.example.com/foo` |
+| `localhost:8080`          | `https://localhost:8080/`     |
+
+#### What to avoid
+
+- **Relative** URLs (`foo/bar`, `/only/path`) — prefer a full **absolute** base URL; relative bases
+  are not supported the same way as in a browser.
+- **Non-HTTP(S) opaque URIs** as the base — use an `https://` (or `http://`) web URL your WebView
+  should load.
+
+#### Verifying behavior
+
+Automated tests for URL normalization live under
+`apollo-buddy-sdk/src/test/java/pk/apollobuddy/sdk/NormalizeWebUrlTest.kt`. Run:
+
+```bash
+./gradlew :apollo-buddy-sdk:testDebugUnitTest
 ```
 
 ---
