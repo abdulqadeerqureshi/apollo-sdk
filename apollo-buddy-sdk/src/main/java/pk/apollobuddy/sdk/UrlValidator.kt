@@ -11,7 +11,7 @@ object UrlValidator {
         if (!URLUtil.isNetworkUrl(url)) return false
 
         val uri: Uri = url.toUri()
-        if (uri.scheme?.lowercase() !in listOf("http", "https")) return false
+        if (uri.scheme?.lowercase() != "https") return false
         if (uri.host.isNullOrBlank()) return false
 
         return true

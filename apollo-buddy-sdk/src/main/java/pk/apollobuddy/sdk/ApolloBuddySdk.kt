@@ -50,7 +50,12 @@ object ApolloBuddySdk {
         val url = initParams!!.buildUrl()
 
         if (!UrlValidator.isValid(url)) {
-            callback?.onResult(ApolloBuddyResult.Failure("Invalid generated URL: $url", 400))
+            callback?.onResult(
+                ApolloBuddyResult.Failure(
+                    reason = "Generated URL is invalid or not HTTPS (check base URL in init params)",
+                    code = 400,
+                ),
+            )
             return
         }
 
