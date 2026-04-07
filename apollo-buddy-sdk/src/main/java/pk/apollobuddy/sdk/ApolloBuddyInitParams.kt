@@ -104,6 +104,8 @@ class ApolloBuddyInitParams private constructor(
  * - If the URI has a hierarchical `scheme://authority` but **no path**, sets the path to `/`
  *   (including `https://host?query` → `https://host/?query`).
  * - If a non-root path already exists, the string is unchanged (no extra trailing slash).
+ * - **`http://` hierarchical URLs** are upgraded to **`https://`** so the SDK never persists an
+ *   insecure scheme.
  *
  * Not handled (callers should pass valid absolute web bases): relative paths (`foo/bar`), malformed
  * URLs, or userinfo edge cases (`user:pass@host` mis-parsed as opaque).
@@ -112,7 +114,8 @@ internal fun normalizeWebUrl(raw: String): String {
     val trimmed = raw.trim()
     if (trimmed.isEmpty()) return trimmed
 
-    val url = ensureHttpsForMissingScheme(trimmed)
+    var url = ensureHttpsForMissingScheme(trimmed)
+    url = upgradeHttpToHttps(url)
 
     val uri: Uri = url.toUri()
     if (uri.scheme.isNullOrEmpty() || uri.authority.isNullOrEmpty()) {
@@ -125,6 +128,16 @@ internal fun normalizeWebUrl(raw: String): String {
     } else {
         url
     }
+}
+
+/** Rewrites `http` scheme to `https` for hierarchical HTTP(S) URLs. */
+internal fun upgradeHttpToHttps(url: String): String {
+    if (!url.contains("://")) return url
+    val uri = url.toUri()
+    val scheme = uri.scheme ?: return url
+    if (!scheme.equals("http", ignoreCase = true)) return url
+    if (uri.authority.isNullOrEmpty()) return url
+    return uri.buildUpon().scheme("https").build().toString()
 }
 
 /** Adds `https` when the string is clearly a missing-scheme web URL; leaves opaque schemes alone. */

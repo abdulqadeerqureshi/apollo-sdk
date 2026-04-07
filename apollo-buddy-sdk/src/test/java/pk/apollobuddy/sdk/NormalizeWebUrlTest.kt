@@ -35,12 +35,12 @@ class NormalizeWebUrlTest {
     fun explicit_http_https() {
         val cases =
             listOf(
-                "http://www.google.com" to "http://www.google.com/",
-                "http://www.google.com/" to "http://www.google.com/",
+                "http://www.google.com" to "https://www.google.com/",
+                "http://www.google.com/" to "https://www.google.com/",
                 "https://www.google.com" to "https://www.google.com/",
                 "https://www.google.com/" to "https://www.google.com/",
                 "https://www.facebook.org/path" to "https://www.facebook.org/path",
-                "http://www.facebook.org/foo/bar" to "http://www.facebook.org/foo/bar",
+                "http://www.facebook.org/foo/bar" to "https://www.facebook.org/foo/bar",
             )
         assertAllCases(cases)
     }
@@ -68,7 +68,7 @@ class NormalizeWebUrlTest {
             listOf(
                 "https://www.google.com?a=1" to "https://www.google.com/?a=1",
                 "www.google.com?x=y" to "https://www.google.com/?x=y",
-                "http://www.facebook.org?q=1" to "http://www.facebook.org/?q=1",
+                "http://www.facebook.org?q=1" to "https://www.facebook.org/?q=1",
             )
         assertAllCases(cases)
     }
@@ -117,7 +117,7 @@ class NormalizeWebUrlTest {
                 "https://www.facebook.org?ref=1#x" to "https://www.facebook.org/?ref=1#x",
                 // Already-canonical https with path
                 "https://www.sapaceX.org/launch" to "https://www.sapaceX.org/launch",
-                "HTTP://WWW.GOOGLE.COM" to "HTTP://WWW.GOOGLE.COM/",
+                "HTTP://WWW.GOOGLE.COM" to "https://WWW.GOOGLE.COM/",
             )
         assertAllCases(cases)
     }

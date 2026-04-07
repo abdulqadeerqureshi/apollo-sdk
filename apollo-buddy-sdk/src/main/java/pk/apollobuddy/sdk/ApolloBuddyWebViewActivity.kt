@@ -2,7 +2,9 @@ package pk.apollobuddy.sdk
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
@@ -12,8 +14,10 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
+import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import pk.apollobuddy.sdk.databinding.ActivityApolloBuddyWebviewBinding
@@ -28,6 +32,11 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityApolloBuddyWebviewBinding
     private var config: ApolloBuddyConfig? = null
+    private var sessionCleared: Boolean = false
+    private var resultDelivered: Boolean = false
+
+    /** Origin string for [WebStorage.deleteOrigin] (e.g. `https://example.com`). */
+    private var flowStorageOrigin: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,11 +48,34 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         config = intent.getParcelableExtra(EXTRA_CONFIG)
 
         if (url == null || !UrlValidator.isValid(url)) {
-            finishWithResult(ApolloBuddyResult.Failure("Invalid URL: $url", 400))
+            finishWithResult(
+                ApolloBuddyResult.Failure(
+                    reason = "Invalid URL: loading address is missing or not HTTPS",
+                    code = 400,
+                ),
+            )
             return
         }
 
-        if (config?.showToolbar == true) {
+        val localConfig = config ?: ApolloBuddyConfig()
+        val uri = url.toUri()
+        if (localConfig.enforceTrustedHostNavigation) {
+            if (localConfig.trustedHosts.isEmpty() ||
+                !TrustedHostPolicy.isHostTrusted(uri, localConfig.trustedHosts)
+            ) {
+                finishWithResult(
+                    ApolloBuddyResult.Failure(
+                        reason = "URL host is not on the trusted host allowlist",
+                        code = 403,
+                    ),
+                )
+                return
+            }
+        }
+
+        flowStorageOrigin = webStorageOriginForUrl(url)
+
+        if (localConfig.showToolbar == true) {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             supportActionBar?.title = "ApolloBuddy"
         } else {
@@ -51,6 +83,18 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         }
 
         setupWebViewSettings()
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (binding.webview.canGoBack()) {
+                        binding.webview.goBack()
+                    } else {
+                        finishWithResult(ApolloBuddyResult.Cancelled(binding.webview.url))
+                    }
+                }
+            },
+        )
         setupWebViewClient()
         setupWebChromeClient()
 
@@ -64,14 +108,19 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         settings.javaScriptEnabled = localConfig.enableJs
         settings.domStorageEnabled = localConfig.enableDomStorage
 
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
+        @Suppress("DEPRECATION")
+        settings.allowFileAccessFromFileURLs = false
+        @Suppress("DEPRECATION")
+        settings.allowUniversalAccessFromFileURLs = false
+
         if (localConfig.customUserAgent != null) {
             settings.userAgentString = localConfig.customUserAgent
         }
 
-        // Mixed content mode
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-
-        // Third party cookies
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(binding.webview, localConfig.allowThirdPartyCookies)
@@ -80,8 +129,18 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
     private fun setupWebViewClient() {
         binding.webview.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url = request?.url?.toString() ?: return false
-                return handleUrl(url)
+                val reqUrl = request?.url?.toString() ?: return false
+                val reqUri = request?.url ?: return false
+                if (!allowNavigationTo(reqUri)) {
+                    finishWithResult(
+                        ApolloBuddyResult.Failure(
+                            reason = "Navigation blocked: URL is not on the trusted host allowlist",
+                            code = 403,
+                        ),
+                    )
+                    return true
+                }
+                return handleUrl(reqUrl)
             }
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -89,8 +148,19 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
                 binding.progressBar.visibility = View.VISIBLE
                 binding.progressBar.progress = 0
 
-                // Check if the start URL is already a result
-                url?.let { handleUrl(it) }
+                url?.let { u ->
+                    val uri = u.toUri()
+                    if (!allowNavigationTo(uri)) {
+                        finishWithResult(
+                            ApolloBuddyResult.Failure(
+                                reason = "Navigation blocked: URL is not on the trusted host allowlist",
+                                code = 403,
+                            ),
+                        )
+                        return
+                    }
+                    handleUrl(u)
+                }
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -100,21 +170,32 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 super.onReceivedError(view, request, error)
-                // Optional: Finish with failure if main frame error? 
-                // For now, let's keep it open to show the error page, 
-                // but maybe we can just log it or Toast.
-                finishWithResult(ApolloBuddyResult.Failure("WebView Error: ${error?.description}", error?.errorCode ?: 500, request?.url?.toString()))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && request?.isForMainFrame != true) {
+                    return
+                }
+                finishWithResult(
+                    ApolloBuddyResult.Failure(
+                        reason = "WebView load error (code ${error?.errorCode ?: 500})",
+                        code = error?.errorCode ?: 500,
+                        finalUrl = request?.url?.toString(),
+                    ),
+                )
             }
 
             @SuppressLint("WebViewClientOnReceivedSslError")
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
                 val localConfig = config ?: ApolloBuddyConfig()
-                if (localConfig.ignoreSslErrors) {
+                if (localConfig.ignoreSslErrors && isHostAppDebuggable()) {
                     handler?.proceed()
                 } else {
                     super.onReceivedSslError(view, handler, error)
-                    // We can also notify the user why it failed
-                    finishWithResult(ApolloBuddyResult.Failure("SSL Error: ${error?.primaryError}", -202, view?.url))
+                    finishWithResult(
+                        ApolloBuddyResult.Failure(
+                            reason = "SSL certificate error",
+                            code = -202,
+                            finalUrl = view?.url,
+                        ),
+                    )
                 }
             }
         }
@@ -133,11 +214,23 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         }
     }
 
+    private fun allowNavigationTo(uri: android.net.Uri): Boolean {
+        val local = config ?: return true
+        if (!local.enforceTrustedHostNavigation) return true
+        return TrustedHostPolicy.isHostTrusted(uri, local.trustedHosts)
+    }
+
+    private fun callbacksAllowedOnHost(uri: android.net.Uri): Boolean {
+        val local = config ?: return true
+        if (!local.enforceTrustedHostNavigation) return true
+        return TrustedHostPolicy.isHostTrusted(uri, local.trustedHosts)
+    }
+
     private fun handleUrl(url: String): Boolean {
         val localConfig = config ?: return false
         val uri = url.toUri()
+        if (!callbacksAllowedOnHost(uri)) return false
 
-        // 1. Check Query Param Logic (Robust)
         if (!localConfig.statusQueryParam.isNullOrBlank()) {
             val status = uri.getQueryParameter(localConfig.statusQueryParam)
             if (status != null) {
@@ -145,53 +238,112 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
                     finishWithResult(ApolloBuddyResult.Success(url))
                     return true
                 } else if (status.equals(localConfig.failureQueryValue, ignoreCase = true)) {
-                    finishWithResult(ApolloBuddyResult.Failure("Payment failed: $status", 200, url))
+                    finishWithResult(ApolloBuddyResult.Failure("Payment failed: status query", 200, url))
                     return true
                 }
             }
         }
 
-        // 2. Check Success Pattern (String match)
-        if (!localConfig.successUrlPattern.isNullOrBlank() && url.contains(localConfig.successUrlPattern)) {
+        if (!localConfig.successPathPrefix.isNullOrBlank()) {
+            if (pathMatchesPrefix(uri.path, localConfig.successPathPrefix)) {
+                finishWithResult(ApolloBuddyResult.Success(url))
+                return true
+            }
+        } else if (!localConfig.successUrlPattern.isNullOrBlank() && url.contains(localConfig.successUrlPattern)) {
             finishWithResult(ApolloBuddyResult.Success(url))
             return true
         }
 
-        // 3. Check Failure Pattern
-        if (!localConfig.failureUrlPattern.isNullOrBlank() && url.contains(localConfig.failureUrlPattern)) {
-            finishWithResult(ApolloBuddyResult.Failure("Payment failed or cancelled via parsing", 200, url))
+        if (!localConfig.failurePathPrefix.isNullOrBlank()) {
+            if (pathMatchesPrefix(uri.path, localConfig.failurePathPrefix)) {
+                finishWithResult(ApolloBuddyResult.Failure("Payment failed or cancelled (failure path)", 200, url))
+                return true
+            }
+        } else if (!localConfig.failureUrlPattern.isNullOrBlank() && url.contains(localConfig.failureUrlPattern)) {
+            finishWithResult(ApolloBuddyResult.Failure("Payment failed or cancelled via URL pattern", 200, url))
             return true
         }
 
         return false
     }
 
+    private fun isHostAppDebuggable(): Boolean =
+        (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
     private fun finishWithResult(result: ApolloBuddyResult) {
-        val data = Intent()
-        data.putExtra(EXTRA_RESULT, result)
-        setResult(RESULT_OK, data)
+        if (resultDelivered || isFinishing) return
+        resultDelivered = true
+        clearSessionBeforeFinish {
+            val data = Intent()
+            data.putExtra(EXTRA_RESULT, result)
+            setResult(RESULT_OK, data)
 
-        ActiveCallbackHolder.callback?.onResult(result)
-        ActiveCallbackHolder.callback = null
+            ActiveCallbackHolder.callback?.onResult(result)
+            ActiveCallbackHolder.callback = null
 
-        finish()
+            finish()
+        }
+    }
+
+    private fun clearSessionBeforeFinish(done: () -> Unit) {
+        if (sessionCleared) {
+            done()
+            return
+        }
+        sessionCleared = true
+        if (::binding.isInitialized) {
+            binding.webview.clearCache(true)
+            binding.webview.clearHistory()
+        }
+        flowStorageOrigin?.let { origin ->
+            try {
+                WebStorage.getInstance().deleteOrigin(origin)
+            } catch (_: Exception) {
+            }
+        }
+        CookieManager.getInstance().removeSessionCookies {
+            CookieManager.getInstance().flush()
+            runOnUiThread(done)
+        }
+    }
+
+    override fun onDestroy() {
+        if (!sessionCleared && ::binding.isInitialized) {
+            sessionCleared = true
+            binding.webview.clearCache(true)
+            flowStorageOrigin?.let { origin ->
+                try {
+                    WebStorage.getInstance().deleteOrigin(origin)
+                } catch (_: Exception) {
+                }
+            }
+            CookieManager.getInstance().removeSessionCookies { CookieManager.getInstance().flush() }
+        }
+        super.onDestroy()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
-            onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
             return true
         }
         return super.onOptionsItemSelected(item)
     }
+}
 
-    @Deprecated("Deprecated in Java", ReplaceWith("if (webView.canGoBack()) webView.goBack() else super.onBackPressed()"))
-    override fun onBackPressed() {
-        super.onBackPressed()
-        if (binding.webview.canGoBack()) {
-            binding.webview.goBack()
+/** Builds an origin string suitable for [WebStorage.deleteOrigin]. */
+internal fun webStorageOriginForUrl(url: String): String? {
+    return try {
+        val u = url.toUri()
+        val scheme = u.scheme ?: return null
+        val host = u.host ?: return null
+        val port = u.port
+        if (port == -1 || (scheme.equals("https", true) && port == 443) || (scheme.equals("http", true) && port == 80)) {
+            "$scheme://$host"
         } else {
-            finishWithResult(ApolloBuddyResult.Cancelled(binding.webview.url))
+            "$scheme://$host:$port"
         }
+    } catch (_: Exception) {
+        null
     }
 }

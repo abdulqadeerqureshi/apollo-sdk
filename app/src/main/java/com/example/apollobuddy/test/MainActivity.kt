@@ -64,8 +64,8 @@ class MainActivity : AppCompatActivity() {
         val config: ApolloBuddyConfig = ApolloBuddyConfig.Builder()
             .setEnableJs(enable = true)
             .setShowToolbar(show = true)
-            .setAllowThirdPartyCookies(allow = true)
-            .setIgnoreSslErrors(ignore = true)
+            .setAllowThirdPartyCookies(allow = false)
+            .setIgnoreSslErrors(ignore = false)
             .setSuccessUrlPattern("success")
             .setStatusQueryParam(
                 param = "status",

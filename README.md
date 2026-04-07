@@ -90,7 +90,9 @@ You do not need to hand-perfect every slash; follow the rules below.
      front of the **whole** string.
    - **Opaque** schemes without `://` (`mailto:…`, `tel:…`, `data:…`) are left as-is — do **not**
      use these as the web base URL.
-3. **Path** — For a normal hierarchical URL (`scheme://host…`):
+3. **`http://` upgrade** — Explicit **`http://`** hierarchical bases are rewritten to **`https://`**
+   before load (in addition to missing-scheme handling above).
+4. **Path** — For a normal hierarchical URL (`scheme://host…`):
    - If there is **no path** (e.g. `https://example.com` or `https://example.com?ref=1`), a **root
      path `/`** is inserted so queries append correctly (`https://example.com/…`).
    - If a path **already exists** (including a lone `/` or `/app/...`), the string is **not**
@@ -105,6 +107,7 @@ You do not need to hand-perfect every slash; follow the rules below.
 | `https://example.com`     | `https://example.com/`        |
 | `https://example.com/app` | `https://example.com/app`     |
 | `https://example.com?x=1` | `https://example.com/?x=1`    |
+| `http://example.com`      | `https://example.com/`        |
 | `//cdn.example.com/foo`   | `https://cdn.example.com/foo` |
 | `localhost:8080`          | `https://localhost:8080/`     |
 
@@ -112,8 +115,8 @@ You do not need to hand-perfect every slash; follow the rules below.
 
 - **Relative** URLs (`foo/bar`, `/only/path`) — prefer a full **absolute** base URL; relative bases
   are not supported the same way as in a browser.
-- **Non-HTTP(S) opaque URIs** as the base — use an `https://` (or `http://`) web URL your WebView
-  should load.
+- **Non-HTTP(S) opaque URIs** as the base — use an `https://` web URL your WebView should load.
+  Plain `http://` bases are **upgraded to `https://`** during normalization.
 
 #### Verifying behavior
 
@@ -123,6 +126,25 @@ Automated tests for URL normalization live under
 ```bash
 ./gradlew :apollo-buddy-sdk:testDebugUnitTest
 ```
+
+---
+
+## Security defaults
+
+The SDK applies a strict baseline (HTTPS-only loads, mixed content blocked, file access disabled,
+third-party cookies off by default). Highlights:
+
+| Topic                      | Behavior                                                                                                                                                                                                                                                  |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Transport**              | Only **`https://`** URLs load. `http://` in `setWebURL` is normalized to **`https://`**.                                                                                                                                                                  |
+| **Mixed content**          | Insecure subresources on HTTPS pages are **not** loaded (`MIXED_CONTENT_NEVER_ALLOW`).                                                                                                                                                                    |
+| **SSL bypass**             | `ignoreSslErrors` is honored **only** when the **host app is debuggable** (`ApplicationInfo.FLAG_DEBUGGABLE`). Release production builds must not ship debuggable; misconfiguration cannot bypass TLS in a normal release APK.                            |
+| **Third-party cookies**    | Default **off**. Enable only if your identity flow **requires** it.                                                                                                                                                                                       |
+| **Trusted hosts**          | Optional `setTrustedHosts` + `setEnforceTrustedHostNavigation(true)` restrict the initial URL, redirects, and callback handling to approved hosts (subdomains of a listed host are allowed).                                                              |
+| **Callbacks**              | Prefer **`setSuccessPathPrefix` / `setFailurePathPrefix`** (path prefix match) over loose `setSuccessUrlPattern` substring checks. Query-param rules remain supported.                                                                                    |
+| **Session cleanup**        | Session cookies, WebView cache/history, and HTML5 storage for the flow origin are cleared when the flow finishes. `CookieManager` is process-wide; avoid enabling third-party cookies unless necessary.                                                   |
+| **Logging**                | Use **`SensitiveDataRedaction.redactUrl`** before logging any URL from `ApolloBuddyResult`. Do not log tokens, IMSI, or user identifiers from SDK parameters.                                                                                             |
+| **Signed `state` / nonce** | Strong assurance against forged redirect URLs requires your **authorization server** to issue and verify a `state` or nonce (OAuth-style). The SDK does not implement server-side signing; add app-side verification once your backend contract is fixed. |
 
 ---
 
@@ -137,8 +159,15 @@ this during launch to tailor the SDK to your needs.
 val webConfig = ApolloBuddyConfig.Builder()
     .setEnableJs(true)
     .setShowToolbar(true)
-    .setAllowThirdPartyCookies(true)
-    .setIgnoreSslErrors(false) // Warning: Only use TRUE for development!
+    // Leave third-party cookies false unless your IdP requires them
+    .setAllowThirdPartyCookies(false)
+    // SSL bypass only applies to debuggable builds; keep false
+    .setIgnoreSslErrors(false)
+
+    // Optional: when your production domain is known, enforce allowlist + path prefixes
+    // .setTrustedHosts(listOf("apollo.example.com"))
+    // .setEnforceTrustedHostNavigation(true)
+    // .setSuccessPathPrefix("/payment/complete")
 
     // Define success criteria based on query parameters
     .setStatusQueryParam(
@@ -146,7 +175,7 @@ val webConfig = ApolloBuddyConfig.Builder()
         successValue = "success",
         failureValue = "failed"
     )
-    // Or define success criteria based on URL path matches
+    // Legacy substring match on full URL (prefer setSuccessPathPrefix when possible)
     // .setSuccessUrlPattern("payment-successful")
     .build()
 ```
