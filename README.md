@@ -71,9 +71,9 @@ class MyApplication : Application() {
 ### Web URL patterns (`setWebURL`)
 
 The SDK builds the page URL by taking a **base URL** and appending query parameters (`eloadNumber`,
-`imsi`, `token`, etc.). You can set the base with *
-*`ApolloBuddyInitParams.Builder.setWebURL(String)`**. If you omit it, the default base is *
-*`https://apollo.digitalmiles.org/`**.
+`imsi`, `token`, etc.). You can set the base with
+**`ApolloBuddyInitParams.Builder.setWebURL(String)`**. If you omit it, the default base is
+**`https://apollo.digitalmiles.org/`**.
 
 `setWebURL` **normalizes** the string so common copy-paste mistakes still produce a loadable URL.
 You do not need to hand-perfect every slash; follow the rules below.
@@ -111,6 +111,13 @@ You do not need to hand-perfect every slash; follow the rules below.
 | `//cdn.example.com/foo`   | `https://cdn.example.com/foo` |
 | `localhost:8080`          | `https://localhost:8080/`     |
 
+#### Query string encoding
+
+Parameter values are encoded with Android’s `Uri.Builder.appendQueryParameter` (same idea as a
+browser `URL` + `searchParams.set` in JavaScript): characters such as `/`, `+`, and `=` in a long
+**token** become `%2F`, `%2B`, `%3D`, etc. Pass **raw** strings to `setToken` and other setters—do
+not pre-encode the full query yourself.
+
 #### What to avoid
 
 - **Relative** URLs (`foo/bar`, `/only/path`) — prefer a full **absolute** base URL; relative bases
@@ -120,11 +127,27 @@ You do not need to hand-perfect every slash; follow the rules below.
 
 #### Verifying behavior
 
-Automated tests for URL normalization live under
-`apollo-buddy-sdk/src/test/java/pk/apollobuddy/sdk/NormalizeWebUrlTest.kt`. Run:
+Automated **unit** tests (JVM, Robolectric where `android.net.Uri` is required) include:
+
+| Area                                  | Test class                          |
+|---------------------------------------|-------------------------------------|
+| `normalizeWebUrl` / `setWebURL`       | `NormalizeWebUrlTest`               |
+| `buildUrl()` encoding vs. long tokens | `ApolloBuddyInitParamsBuildUrlTest` |
+| Production base URL + `UrlValidator`  | `ProductionApolloUrlTest`           |
+| HTTPS validation                      | `UrlValidatorTest`                  |
+| Trusted host policy                   | `TrustedHostPolicyTest`             |
+
+Run unit tests:
 
 ```bash
 ./gradlew :apollo-buddy-sdk:testDebugUnitTest
+```
+
+**Instrumentation** tests (`src/androidTest`) include a WebView load against a **local HTTPS
+MockWebServer** (OkHttp) so CI does not depend on live network. Run on a device or emulator:
+
+```bash
+./gradlew :apollo-buddy-sdk:connectedDebugAndroidTest
 ```
 
 ---
@@ -180,12 +203,39 @@ val webConfig = ApolloBuddyConfig.Builder()
     .build()
 ```
 
+### Toolbar (`setShowToolbar`)
+
+When **`setShowToolbar(true)`** (the default), the flow shows a **Material toolbar** with a centered
+**“Apollo Buddy”** title and a **back** control that mirrors the system back behavior (WebView
+history first, then finish back to your app).
+
+- **Host theme** — The WebView activity inherits your **`<application android:theme>`** (the library
+  does not force a separate activity theme). The toolbar uses **`?attr/colorPrimary`**,
+  **`?attr/actionBarTheme`**, and **`?attr/actionBarPopupTheme`** so colors and the up icon follow
+  your app. Prefer a **Material** / **AppCompat** theme that defines those attributes.
+- **Window action bar** — If your theme uses **`Theme.*.DarkActionBar`** (a window action bar), the
+  SDK **hides** that bar and uses its own **MaterialToolbar** in the layout so you do not get a
+  duplicate bar or a `setSupportActionBar` crash. Themes that already use **`NoActionBar`** are also
+  supported.
+- **Custom bar color** — Optional **`ApolloBuddyConfig.Builder.setThemeColor(color: Int)`** tints
+  the
+  toolbar background and picks a dark or light foreground for the title and navigation icon for
+  contrast.
+
 ---
 
 ## 🎯 Step 3: Launch the SDK
 
 Since the SDK dynamically generates the secure URL internally based on the `ApolloBuddyInitParams`
 provided during initialization, launching the SDK requires no URL input!
+
+### Very long URLs (large tokens)
+
+Android limits how much data can be sent in a single `Intent` extra (Binder budget). If the
+generated URL is **longer than ~80,000 characters**, the SDK **does not** put it in the intent;
+instead it passes the URL through an internal holder and the WebView activity reads it from there.
+Shorter URLs continue to use the `Intent` extra as usual. You do not need to change integration
+code for this behavior.
 
 ### What Success, Failure, and Cancelled mean
 

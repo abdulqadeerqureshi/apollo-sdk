@@ -37,6 +37,14 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
+    sourceSets {
+        getByName("test") {
+            java.srcDir("src/sharedTest/java")
+        }
+        getByName("androidTest") {
+            java.srcDir("src/sharedTest/java")
+        }
+    }
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -53,6 +61,8 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
 }
 
 afterEvaluate {
@@ -62,7 +72,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "pk.apollobuddy"
                 artifactId = "apollo_buddy_sdk"
-                version = "1.0.4"
+                version = "1.0.5"
             }
         }
 

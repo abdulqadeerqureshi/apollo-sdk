@@ -17,6 +17,14 @@ class ApolloBuddyInitParams private constructor(
     val webURL: String,
 ) {
 
+    /**
+     * Returns the WebView load URL with all init fields as query parameters.
+     *
+     * Values are encoded with [Uri.Builder.appendQueryParameter], which applies the same
+     * percent-encoding rules as `URL` + `searchParams.set(...)` in JavaScript (for example `/` →
+     * `%2F`, `+` → `%2B`, `=` → `%3D`). Pass raw strings for [token] and other fields; do not
+     * pre-encode or concatenate the query string manually.
+     */
     fun buildUrl(): String {
         val uriBuilder: Uri.Builder? = webURL.toUri().buildUpon()
         uriBuilder?.appendQueryParameter("eloadNumber", eloadNumber)

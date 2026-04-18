@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
 import android.webkit.CookieManager
@@ -19,7 +21,10 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.color.MaterialColors
 import pk.apollobuddy.sdk.databinding.ActivityApolloBuddyWebviewBinding
 
 class ApolloBuddyWebViewActivity : AppCompatActivity() {
@@ -44,7 +49,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         binding = ActivityApolloBuddyWebviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val url = intent.getStringExtra(EXTRA_URL)
+        val url = intent.getStringExtra(EXTRA_URL) ?: ApolloBuddySdk.takePendingLaunchUrl()
         config = intent.getParcelableExtra(EXTRA_CONFIG)
 
         if (url == null || !UrlValidator.isValid(url)) {
@@ -75,11 +80,17 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
         flowStorageOrigin = webStorageOriginForUrl(url)
 
-        if (localConfig.showToolbar == true) {
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
-            supportActionBar?.title = "ApolloBuddy"
-        } else {
+        if (localConfig.showToolbar) {
+            // Host apps often use Theme.*.DarkActionBar; that supplies a window action bar which
+            // conflicts with setSupportActionBar(Toolbar). Hide the window bar and use our toolbar only.
             supportActionBar?.hide()
+            binding.toolbar.visibility = View.VISIBLE
+            setupStandaloneToolbar(binding.toolbar, localConfig.themeColor)
+            binding.toolbar.setNavigationOnClickListener {
+                onBackPressedDispatcher.onBackPressed()
+            }
+        } else {
+            binding.toolbar.visibility = View.GONE
         }
 
         setupWebViewSettings()
@@ -328,6 +339,32 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
             return true
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * Toolbar as a standalone widget (no [setSupportActionBar]) so the activity works with host
+     * themes that already provide a window action bar ([AppCompatDelegate] would otherwise throw).
+     * Up icon comes from [androidx.appcompat.R.attr.homeAsUpIndicator] so it matches the app theme.
+     */
+    private fun setupStandaloneToolbar(toolbar: MaterialToolbar, themeColor: Int?) {
+        val tv = TypedValue()
+        if (theme.resolveAttribute(androidx.appcompat.R.attr.homeAsUpIndicator, tv, true) && tv.resourceId != 0) {
+            toolbar.navigationIcon = AppCompatResources.getDrawable(this, tv.resourceId)
+        }
+        applyToolbarColors(toolbar, themeColor)
+    }
+
+    /**
+     * When [ApolloBuddyConfig.themeColor] is set, tint navigation icon and title for contrast.
+     * Otherwise the toolbar uses [android.R.attr.actionBarTheme] from the host application theme.
+     */
+    private fun applyToolbarColors(toolbar: MaterialToolbar, themeColor: Int?) {
+        if (themeColor == null) return
+        toolbar.setBackgroundColor(themeColor)
+        val useDarkForeground = MaterialColors.isColorLight(themeColor)
+        val on = if (useDarkForeground) Color.BLACK else Color.WHITE
+        toolbar.setNavigationIconTint(on)
+        toolbar.setTitleTextColor(on)
     }
 }
 
