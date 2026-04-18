@@ -7,7 +7,6 @@
         <activity
             android:name=".ApolloBuddyWebViewActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:exported="false" />
     </application>
 </manifest>

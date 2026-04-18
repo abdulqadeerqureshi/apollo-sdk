@@ -3,15 +3,37 @@ package pk.apollobuddy.sdk
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
+import pk.apollobuddy.sdk.ApolloBuddySdk.pendingLaunchUrl
 
 /**
  * Main entry point for the Apollo Buddy SDK.
  */
 object ApolloBuddySdk {
 
+    /**
+     * Intents have a Binder size limit (~1MB). Very long query strings (e.g. large tokens) can exceed
+     * it and prevent [ApolloBuddyWebViewActivity] from receiving [ApolloBuddyWebViewActivity.EXTRA_URL].
+     * URLs longer than this are passed out-of-band via [pendingLaunchUrl] instead.
+     */
+    internal const val MAX_URL_INTENT_EXTRA_LENGTH: Int = 80_000
+
     private var isInitialized = false
     private var applicationContext: Context? = null
     internal var initParams: ApolloBuddyInitParams? = null
+
+    @Volatile
+    internal var pendingLaunchUrl: String? = null
+        private set
+
+    internal fun setPendingLaunchUrl(url: String) {
+        pendingLaunchUrl = url
+    }
+
+    internal fun takePendingLaunchUrl(): String? {
+        val u = pendingLaunchUrl
+        pendingLaunchUrl = null
+        return u
+    }
 
     /**
      * Initializes the SDK. Should be called in the Application class.
@@ -60,7 +82,7 @@ object ApolloBuddySdk {
         }
 
         val intent = Intent(context, ApolloBuddyWebViewActivity::class.java).apply {
-            putExtra(ApolloBuddyWebViewActivity.EXTRA_URL, url)
+            putLaunchUrlExtra(url)
             putExtra(ApolloBuddyWebViewActivity.EXTRA_CONFIG, config)
         }
 
@@ -83,7 +105,7 @@ object ApolloBuddySdk {
         override fun createIntent(context: Context, input: ApolloBuddyLaunchInput): Intent {
             val url = initParams?.buildUrl() ?: throw IllegalStateException("ApolloBuddySdk not initialized with params")
             return Intent(context, ApolloBuddyWebViewActivity::class.java).apply {
-                putExtra(ApolloBuddyWebViewActivity.EXTRA_URL, url)
+                putLaunchUrlExtra(url)
                 putExtra(ApolloBuddyWebViewActivity.EXTRA_CONFIG, input.config)
             }
         }
@@ -91,6 +113,14 @@ object ApolloBuddySdk {
         override fun parseResult(resultCode: Int, intent: Intent?): ApolloBuddyResult {
             return intent?.getParcelableExtra(ApolloBuddyWebViewActivity.EXTRA_RESULT)
                 ?: ApolloBuddyResult.Cancelled()
+        }
+    }
+
+    private fun Intent.putLaunchUrlExtra(url: String) {
+        if (url.length <= MAX_URL_INTENT_EXTRA_LENGTH) {
+            putExtra(ApolloBuddyWebViewActivity.EXTRA_URL, url)
+        } else {
+            setPendingLaunchUrl(url)
         }
     }
 }
