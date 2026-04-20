@@ -48,6 +48,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(pk.apollobuddy.sdk.R.style.Theme_ApolloBuddy)
         super.onCreate(savedInstanceState)
         binding = ActivityApolloBuddyWebviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
