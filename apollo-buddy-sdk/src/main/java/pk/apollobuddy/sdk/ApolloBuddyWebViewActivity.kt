@@ -1,10 +1,13 @@
 package pk.apollobuddy.sdk
 
+import android.R
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.Uri
+import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
@@ -62,7 +65,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
             return
         }
 
-        val localConfig = config ?: ApolloBuddyConfig()
+        val localConfig: ApolloBuddyConfig = config ?: ApolloBuddyConfig()
         val uri = url.toUri()
         if (localConfig.enforceTrustedHostNavigation) {
             if (localConfig.trustedHosts.isEmpty() ||
@@ -194,7 +197,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
             }
 
             @SuppressLint("WebViewClientOnReceivedSslError")
-            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
+            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
                 val localConfig = config ?: ApolloBuddyConfig()
                 if (localConfig.ignoreSslErrors && isHostAppDebuggable()) {
                     handler?.proceed()
@@ -225,13 +228,13 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         }
     }
 
-    private fun allowNavigationTo(uri: android.net.Uri): Boolean {
+    private fun allowNavigationTo(uri: Uri): Boolean {
         val local = config ?: return true
         if (!local.enforceTrustedHostNavigation) return true
         return TrustedHostPolicy.isHostTrusted(uri, local.trustedHosts)
     }
 
-    private fun callbacksAllowedOnHost(uri: android.net.Uri): Boolean {
+    private fun callbacksAllowedOnHost(uri: Uri): Boolean {
         val local = config ?: return true
         if (!local.enforceTrustedHostNavigation) return true
         return TrustedHostPolicy.isHostTrusted(uri, local.trustedHosts)
@@ -334,7 +337,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
+        if (item.itemId == R.id.home) {
             onBackPressedDispatcher.onBackPressed()
             return true
         }
@@ -356,7 +359,7 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
     /**
      * When [ApolloBuddyConfig.themeColor] is set, tint navigation icon and title for contrast.
-     * Otherwise the toolbar uses [android.R.attr.actionBarTheme] from the host application theme.
+     * Otherwise the toolbar uses [R.attr.actionBarTheme] from the host application theme.
      */
     private fun applyToolbarColors(toolbar: MaterialToolbar, themeColor: Int?) {
         if (themeColor == null) return

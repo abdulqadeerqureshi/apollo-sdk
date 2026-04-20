@@ -5,18 +5,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!--
-      Theme comes from the host app (?attr/actionBarTheme / actionBarPopupTheme) so toolbar
-      content color and navigation icon match the application (not forced white).
-    -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
-        android:theme="?attr/actionBarTheme"
-        app:popupTheme="?attr/actionBarPopupTheme"
         app:title="@string/apollo_buddy_toolbar_title"
         app:titleCentered="true" />
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.ApolloBuddy" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- 
+            Base theme for ApolloBuddyWebViewActivity.
+            Using a MaterialComponents theme ensures MaterialToolbar can inflate without crashing,
+            even if the host application uses a non-Material framework theme.
+        -->
+    </style>
+</resources>
