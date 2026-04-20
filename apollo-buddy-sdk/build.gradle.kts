@@ -56,7 +56,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.webkit:webkit:1.9.0")
+    implementation("androidx.webkit:webkit:1.15.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -72,7 +72,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "pk.apollobuddy"
                 artifactId = "apollo_buddy_sdk"
-                version = "1.0.5"
+                version = "1.0.7"
             }
         }
 

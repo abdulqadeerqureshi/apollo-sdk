@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
             .setUserCode("APOL-1112")
             .setEmployeeId(1456)
             .setToken("t293f4XXXXXXXXXX")
+            .setWebURL("https://google.com")
             .build()
 
         ApolloBuddySdk.init(applicationContext, params)
