@@ -32,8 +32,10 @@ dependencies {
 
 ## 🚀 Step 1: Initialize the SDK
 
-You **must** initialize the SDK exactly once before trying to launch it. The best place to do this
-is in your `Application` class inside `onCreate()`.
+You **must** initialize the SDK before trying to launch it. You can initialize once in your
+`Application` class, and call `ApolloBuddySdk.updateParams(...)` or `ApolloBuddySdk.init(...)` again
+with refreshed params whenever your token changes. The next launch will use the latest params stored
+by the SDK.
 
 The SDK mandates certain parameters to guarantee valid authentication flows.
 
@@ -62,7 +64,7 @@ class MyApplication : Application() {
            // .setWebURL("https://your-api.example.com/")
             .build()
 
-        // 2. Initialize the SDK
+        // 2. Initialize or refresh the SDK params
         ApolloBuddySdk.init(applicationContext, initParams)
     }
 }

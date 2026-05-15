@@ -17,8 +17,12 @@ object ApolloBuddySdk {
      */
     internal const val MAX_URL_INTENT_EXTRA_LENGTH: Int = 80_000
 
+    @Volatile
     private var isInitialized = false
+
     private var applicationContext: Context? = null
+
+    @Volatile
     internal var initParams: ApolloBuddyInitParams? = null
 
     @Volatile
@@ -36,11 +40,20 @@ object ApolloBuddySdk {
     }
 
     /**
-     * Initializes the SDK. Should be called in the Application class.
+     * Initializes or refreshes the SDK parameters. Host apps should call this again with a fresh
+     * token before launching when their authentication token changes.
      */
+    @Synchronized
     fun init(context: Context, params: ApolloBuddyInitParams) {
-        if (isInitialized) return
         applicationContext = context.applicationContext
+        updateParams(params)
+    }
+
+    /**
+     * Refreshes the parameters used to build the next launch URL.
+     */
+    @Synchronized
+    fun updateParams(params: ApolloBuddyInitParams) {
         initParams = params
         isInitialized = true
     }
