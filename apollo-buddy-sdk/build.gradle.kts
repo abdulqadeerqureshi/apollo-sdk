@@ -72,7 +72,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "pk.apollobuddy"
                 artifactId = "apollo_buddy_sdk"
-                version = "1.0.7"
+                version = "1.0.8"
             }
         }
 
