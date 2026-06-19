@@ -8,6 +8,7 @@
             android:name=".ApolloBuddyWebViewActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@style/Theme.ApolloBuddy"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false" />
     </application>
 </manifest>

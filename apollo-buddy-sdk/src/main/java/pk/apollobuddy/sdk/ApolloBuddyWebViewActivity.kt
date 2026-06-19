@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
@@ -23,11 +24,15 @@ import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.MaterialColors
+import pk.apollobuddy.sdk.R.style.Theme_ApolloBuddy
 import pk.apollobuddy.sdk.databinding.ActivityApolloBuddyWebviewBinding
 
 class ApolloBuddyWebViewActivity : AppCompatActivity() {
@@ -48,13 +53,26 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(pk.apollobuddy.sdk.R.style.Theme_ApolloBuddy)
+        enableEdgeToEdge()
+        setTheme(Theme_ApolloBuddy)
         super.onCreate(savedInstanceState)
         binding = ActivityApolloBuddyWebviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // enableEdgeToEdge() (above) makes the system bars transparent; we must consume the insets
+        // ourselves or the toolbar/WebView would draw under the status and navigation bars. The
+        // toolbar (when visible) absorbs the top inset; the content view absorbs the sides, bottom
+        // and the keyboard. toolbarVisibleProvider is read on each pass, so it tracks the visibility
+        // toggle applied below before the first layout.
+        ApolloBuddyEdgeToEdge.install(
+            root = binding.root,
+            toolbar = binding.toolbar,
+            content = binding.contentContainer,
+            toolbarVisibleProvider = { binding.toolbar.isVisible },
+        )
+
         val url = intent.getStringExtra(EXTRA_URL) ?: ApolloBuddySdk.takePendingLaunchUrl()
-        config = intent.getParcelableExtra(EXTRA_CONFIG)
+        config = IntentCompat.getParcelableExtra(intent, EXTRA_CONFIG, ApolloBuddyConfig::class.java)
 
         if (url == null || !UrlValidator.isValid(url)) {
             finishWithResult(
@@ -334,6 +352,16 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
             }
             CookieManager.getInstance().removeSessionCookies { CookieManager.getInstance().flush() }
         }
+        // Release the WebView's native resources and break its reference to this Activity. A WebView
+        // outliving its Activity is a classic leak. Run unconditionally (independent of the session
+        // clear above) and detach from the view tree before destroy() to avoid the
+        // "Calling destroy() while still attached to window" warning and ensure a clean release.
+        if (::binding.isInitialized) {
+            val webView = binding.webview
+            webView.stopLoading()
+            (webView.parent as? ViewGroup)?.removeView(webView)
+            webView.destroy()
+        }
         super.onDestroy()
     }
 
@@ -369,6 +397,9 @@ class ApolloBuddyWebViewActivity : AppCompatActivity() {
         val on = if (useDarkForeground) Color.BLACK else Color.WHITE
         toolbar.setNavigationIconTint(on)
         toolbar.setTitleTextColor(on)
+        // The toolbar fills the status-bar area (its top padding is the status-bar inset), so the
+        // status-bar icons must contrast with the toolbar color, not the system day/night default.
+        ApolloBuddyEdgeToEdge.applyStatusBarIconContrast(window, isLightBackground = useDarkForeground)
     }
 }
 

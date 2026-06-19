@@ -3,6 +3,7 @@ package pk.apollobuddy.sdk
 import android.content.Context
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.core.content.IntentCompat
 import pk.apollobuddy.sdk.ApolloBuddySdk.pendingLaunchUrl
 
 /**
@@ -124,8 +125,13 @@ object ApolloBuddySdk {
         }
 
         override fun parseResult(resultCode: Int, intent: Intent?): ApolloBuddyResult {
-            return intent?.getParcelableExtra(ApolloBuddyWebViewActivity.EXTRA_RESULT)
-                ?: ApolloBuddyResult.Cancelled()
+            return intent?.let {
+                IntentCompat.getParcelableExtra(
+                    it,
+                    ApolloBuddyWebViewActivity.EXTRA_RESULT,
+                    ApolloBuddyResult::class.java,
+                )
+            } ?: ApolloBuddyResult.Cancelled()
         }
     }
 

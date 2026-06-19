@@ -3,6 +3,7 @@ package com.example.apollobuddy.test
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import pk.apollobuddy.sdk.ApolloBuddyConfig
 import pk.apollobuddy.sdk.ApolloBuddyInitParams
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        enableEdgeToEdge()
         // Initialize SDK
         val params: ApolloBuddyInitParams = ApolloBuddyInitParams.Builder()
             .setEloadNumber("031234567890")

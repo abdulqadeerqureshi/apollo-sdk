@@ -7,11 +7,11 @@ plugins {
 
 android {
     namespace = "pk.apollobuddy.sdk"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 35
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -55,10 +55,16 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
+    // enableEdgeToEdge() requires androidx.activity 1.8.0+; pin explicitly so it does not rely on a
+    // transitive version that a future appcompat bump could change.
+    implementation("androidx.activity:activity-ktx:1.9.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.webkit:webkit:1.15.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.13")
+    // Robolectric activity/inset tests run on the JVM under the `test` source set.
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
@@ -72,7 +78,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "pk.apollobuddy"
                 artifactId = "apollo_buddy_sdk"
-                version = "1.0.8"
+                version = "1.0.9"
             }
         }
 
